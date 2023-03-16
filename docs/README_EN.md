@@ -1,6 +1,6 @@
 # GIMS (Genshin Impact Mutiple Servers Creating Tool)
 
-English | [ÖÐÎÄ](https://github.com/ELPSI/GIMS/blob/main/README.md)
+English | [ä¸­æ–‡](https://github.com/ELPSI/GIMS/blob/main/README.md)
 
 A tool of creating **mutiple** game servers of **Genshin Impact** on one computer with **64-bit operating system of Windows 10,11**.
 
