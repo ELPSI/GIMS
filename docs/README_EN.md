@@ -70,4 +70,4 @@ The resource pack download link is as follows:
 - [@wanting0521](https://github.com/wanting0521) - provided the inspiration for this tool.
 
 ## License
-[MIT](https://github.com/ELPSI/blob/master/LICENSE)
+[MIT](https://github.com/ELPSI/GIMS/blob/main/LICENSE)

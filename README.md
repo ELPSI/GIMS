@@ -68,4 +68,4 @@
 - [@wanting0521](https://github.com/wanting0521) - 提供了本工具的灵感。
 
 ## 许可证
-[MIT](https://github.com/ELPSI/blob/master/LICENSE)
+[MIT](https://github.com/ELPSI/GIMS/blob/main/LICENSE)
