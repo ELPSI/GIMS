@@ -1,12 +1,12 @@
 @ECHO OFF
 CHCP 65001 > NUL
-:: File name:	原神多服创建工具
+:: File name:	GIMS
 :: Author:		elpsy	
-:: Version:		1.0
-:: Date:		20230310
-:: Description	利用原有的原神资源文件在指定位置创建文件/文件夹映射，适用于天空岛服、世界树服和国际服
+:: Version:		1.0.0
+:: Date:		20230316
+:: Description	Create a file/folder mapping in a specified location using the original resource files of Genshin Impact game, applicable to sky-island server, world-tree server and international server.
 
-CD /D %~DP0 & TITLE 原神多服创建工具
+CD /D %~DP0 & TITLE GIMS
 SETLOCAL ENABLEDELAYEDEXPANSION
 SET "logDate=%DATE:~3,4%%DATE:~8,2%%DATE:~11,2%"
 SET "logTime=%TIME:~0,8%"
@@ -33,7 +33,7 @@ IF ERRORLEVEL 1 (GOTO UACPROMPT) ELSE (GOTO UACADMIN)
 EXIT /B
 :UACADMIN
 CD /D "%~DP0"
-ECHO;&ECHO 管理员权限已获取，当前运行路径是：%CD%
+ECHO;&ECHO The administrator privilege has been obtained, and the current running path is：%CD%
 IF NOT EXIST "log" MKDIR "log"
 ECHO [%logTime%] INFO: Get system administrator privileges 1. >>log\log_%logDate%.txt
 CALL :INITIALIZATION
@@ -41,12 +41,12 @@ REM PAUSE & ECHO pausing &&echo;
 ::Check successCount
 ECHO %successCount%|FINDSTR "^[1-9][0-9]*$" > NUL
 IF ERRORLEVEL 1	(
-	ECHO;&ECHO 检测到这是第一次运行本软件！
+	ECHO;&ECHO Detected that this is the first time to run this tool.
 	ECHO [%logTime%] INFO: May be the first time to execute. >>log\log_%logDate%.txt
 	REM PAUSE & ECHO pausing &&echo; 
 	CALL :GET_OLDPATH_REG
 ) ELSE (
-	ECHO;&ECHO 检测到曾经成功创建过原神服务器！
+	ECHO;&ECHO It is detected that the Genshin Impact server has been successfully created.
 	ECHO [%logTime%] INFO: Executed successfully in the past. >>log\log_%logDate%.txt
 )
 CALL :CHOOSE_SERVER
@@ -58,7 +58,7 @@ IF "%newDataType%"=="%oldDataType%" (
 )
 CALL :UPDATECFG
 CALL :CREATE_SHORTCUT
-ECHO;&ECHO 服务器创建完成，按任意键退出！
+ECHO;&ECHO The server is created, press any key to exit.
 PAUSE>NUL & EXIT
 
 :INITIALIZATION
@@ -75,7 +75,7 @@ IF EXIST "cfg\cfg.ini" (
 	ECHO [%logTime%] ERROR: Cfg.ini not found. >>log\log_%logDate%.txt
 	CALL :FAILED_BREAK
 )
-ECHO;&ECHO 正在读取配置文件...
+ECHO;&ECHO Reading configuration file...
 ECHO [%logTime%] INFO: Cfg.ini start to read: >>log\log_%logDate%.txt
 >>log\log_%logDate%.txt ECHO gameVersion=%gameVersion%
 >>log\log_%logDate%.txt ECHO landServerStatus=%landServerStatus%
@@ -163,19 +163,19 @@ GOTO :EOF
 :INPUT_OLDGAMEPATH
 ::Input old game path
 ECHO;&ECHO _______________________________________________________________
-ECHO;&ECHO 请输入游戏安装路径：点击鼠标右键粘贴在此处，按Enter键即可:
-ECHO;&SET /P "oldGamePath=游戏安装路径为："
+ECHO;&ECHO Please enter the game installation path: click the right mouse button to paste here, and press the "Enter" key:
+ECHO;&SET /P "oldGamePath=The game installation path is:"
 IF EXIST "%oldGamePath%" (
 	ECHO %oldGamePath%|FINDSTR /C:"Genshin Impact\Genshin Impact game" > NUL
 	IF ERRORLEVEL 1	(
-		ECHO;&ECHO 输入的游戏安装路径不存在，请检查并重新输入.
+		ECHO;&ECHO The game installation path inputted does not exist, please check and re-input.
 		GOTO INPUT_OLDGAMEPATH				
 	) ELSE (
-		ECHO;&ECHO 输入的游戏安装路径存在，请继续..
+		ECHO;&ECHO The game installation path inputted exists, please continue...
 		ECHO [%logTime%] INFO: OldGamePath exists：%oldGamePath% . >>log\log_%logDate%.txt
 	)	
 ) ELSE (
-	ECHO;&ECHO 输入的游戏安装路径不存在，请检查并重新输入.
+	ECHO;&ECHO The game installation path inputted does not exist, please check and re-input.
 	GOTO INPUT_OLDGAMEPATH
 )
 GOTO :EOF
@@ -204,10 +204,10 @@ IF EXIST "%oldGamePath%\GenshinImpact_Data" (
 		SET "oldServerName=Seaserver"
 		SET "oldDataType=GenshinImpact_Data"
 		SET /A "seaServerStatus=1"
-		ECHO;&ECHO 检测到原始原神服务器为国际服
+		ECHO;&ECHO Detected that the original server is International server.
 		ECHO [%logTime%] INFO: Seaserver detected. >>log\log_%logDate%.txt
 	) ELSE (
-		ECHO;&ECHO Data文件夹重复，请重新下载安装.
+		ECHO;&ECHO The "Data" folder is duplicated, please download and install the game again.
 		ECHO [%logTime%] ERROR: Both Yuanshen_Data and GenshinImpact_Data exist. >>log\log_%logDate%.txt
 		CALL :FAILED_BREAK		
 	)
@@ -217,48 +217,48 @@ IF EXIST "%oldGamePath%\GenshinImpact_Data" (
 			SET "oldServerName=Landserver"
 			SET "oldDataType=YuanShen_Data"
 			SET /A "landServerStatus=1"
-			ECHO;&ECHO 检测到原始原神服务器为官服
+			ECHO;&ECHO Detected that the original Yuanshen server is Sky-Island server.
 			ECHO [%logTime%] INFO: Landserver detected. >>log\log_%logDate%.txt
 		) ELSE (
 			IF %channel%==14 (			
 				SET "oldServerName=Treeserver"
 				SET "oldDataType=YuanShen_Data"
 				SET /A "treeServerStatus=1"
-				ECHO;&ECHO 检测到原始原神服务器为b服
+				ECHO;&ECHO Detected that the original Yuanshen server is World-Tree server.
 				ECHO [%logTime%] INFO: Treeserver detected. >>log\log_%logDate%.txt
 			) ELSE (
-				ECHO;&ECHO Config.ini内容错误.
+				ECHO;&ECHO The content of Config.ini is wrong.
 				ECHO [%logTime%] ERROR: Config.ini error. >>log\log_%logDate%.txt
 				CALL :FAILED_BREAK				
 			)
 		)	
 	) ELSE (
-		ECHO;&ECHO 找不到Data文件夹，请重新下载安装！
+		ECHO;&ECHO The Data folder cannot be found, please download and install the game again.
 		ECHO [%logTime%] ERROR: Game data directory error. >>log\log_%logDate%.txt
 		CALL :FAILED_BREAK		
-	)	
+	)
 )
 GOTO :EOF
 
 :CHOOSE_SERVER
 ::Choose new server type
 SET /A "newServerStatus=0"
-ECHO;&ECHO 原始游戏安装路径为"%oldGamePath%"
+ECHO;&ECHO The original game installation path is: "%oldGamePath%"
 ECHO [%logTime%] INFO: Old game path: "%oldGamePath%". >>log\log_%logDate%.txt
 CD /D "%oldGamePath%\..\.."
 SET "newPath=%CD%GenshinImpactNew"
 CD /D %~DP0
 IF NOT EXIST "%newPath%" MD "%newPath%"
-ECHO;&ECHO 新游戏路径默认为："%newPath%"
+ECHO;&ECHO The new game path default is: "%newPath%"
 ECHO [%logTime%] INFO: New Path: "%newPath%". >>log\log_%logDate%.txt
 REM ECHO;&ECHO _______________________________________________________________
-ECHO;&ECHO 请选择你想创建的原神服务器类型:
-ECHO;&ECHO 1.原神官服（ID以1、2开头）
-ECHO;&ECHO 2.原神b服（ID以5开头）
-ECHO;&ECHO 3.原神国际服（ID以6、7、8、9开头）
+ECHO;&ECHO Please select the type of game server you want to create:
+ECHO;&ECHO 1.Sky-Island server (ID starts with the number 1 or 2).
+ECHO;&ECHO 2.World-Tree server (ID starts with the number 5).
+ECHO;&ECHO 3.International server (ID starts with the number 6, 7, 8 or 9).
 :INPUT_SERVER
 ECHO;&ECHO _______________________________________________________________
-ECHO;&SET /P "newServerNum=请输入数字1、2或3，按Enter键继续："
+ECHO;&SET /P "newServerNum=Please enter the number 1, 2 or 3 and press the "Enter" key to continue:"
 
 IF "%newServerNum%"=="1" (
 	SET "newServerName=Landserver"
@@ -272,30 +272,30 @@ IF "%newServerNum%"=="1" (
 			SET "newServerName=Seaserver"
 			SET "newServerStatus=%seaServerStatus%"
 		) ELSE (
-			ECHO;&ECHO 输入非法，请重新输入！
+			ECHO;&ECHO Illegal input, please re-input.
 			GOTO INPUT_SERVER
 		)
 	)
 )
 echo newServerStatus=%newServerStatus% >>log\log_%logDate%.txt
 IF %newServerStatus%==1 (
-	ECHO;&ECHO 此服务器已存在，请选择其他服！
+	ECHO;&ECHO This server already exists, please choose another server.
 	GOTO INPUT_SERVER	
 ) ELSE (
 	IF "%newServerName%"=="%oldServerName%" (
-		ECHO;&ECHO 此服务器已存在，请选择其他服！
+		ECHO;&ECHO This server already exists, please choose another server.
 		GOTO INPUT_SERVER	
 	) ELSE (
-		ECHO;&ECHO 等待进行服务器创建！
+		ECHO;&ECHO Waiting for server creation...
 		)		
 	)
 )
 IF "%newServerName%"=="Seaserver" (
-	SET "resourceName=国际服资源"
+	SET "resourceName=SeaRes_"
 	SET "newDataType=GenshinImpact_Data"
 	SET "gameName=GenshinImpact.exe"
 ) ELSE (
-	SET "resourceName=国服资源"
+	SET "resourceName=CNRes_"
 	SET "newDataType=YuanShen_Data"
 	SET "gameName=YuanShen.exe"
 )
@@ -309,25 +309,26 @@ GOTO :EOF
 :CN_SEA
 ::Detect the resource in this folder (for CN to sea)
 IF NOT EXIST "%~DP0%resourceName%V%gameVersion%" (
-	ECHO;&ECHO 请确认已下载"%resourceName%V%gameVersion%.exe"，按Enter键继续：
+	ECHO;&ECHO Please confirm that "%resourceName%V%gameVersion%.exe" has been downloaded and press Enter to continue:
 	PAUSE >NUL
 	IF NOT EXIST "%resourceName%V%gameVersion%.exe" (
-		ECHO;&ECHO 未检测到"%resourceName%V%gameVersion%.exe"，请重新下载！
+		ECHO;&ECHO "%resourceName%V%gameVersion%.exe" was not detected, please download again.
 		GOTO CN_SEA
 	) 
-	ECHO;&ECHO 请将"%resourceName%V%gameVersion%.exe"解压至本文件夹，即直接在弹出的对话框中按确定即可。
+	ECHO;&ECHO Please unzip "%resourceName%V%gameVersion%.exe" to this folder, that is, just press OK in the pop-up dialog box.
 	"%resourceName%V%gameVersion%.exe"
+	
 )
 XCOPY /E /Y "%resourceName%V%gameVersion%\" "%newGamePath%" >NUL 2>NUL
-ECHO;&ECHO 正在将资源文件复制到新游戏路径..
+ECHO;&ECHO Copying resource files to new game path...
 IF ERRORLEVEL 1 (
-	ECHO;&ECHO 资源文件复制失败！
+	ECHO;&ECHO Resource file copy failed.
 	ECHO [%logTime%] ERROR: Failed to copy resources. >>log\log_%logDate%.txt	
 ) ELSE (
 	ECHO [%logTime%] INFO: Copy resources successfully. >>log\log_%logDate%.txt
 )
 ::Make link (for CN to sea)
-ECHO;&ECHO 开始创建链接...
+ECHO;&ECHO Start creating links...
 FOR /F "EOL=# DELIMS==" %%i IN (cfg\listdir.ini) DO (
 	IF NOT EXIST "%oldDataPath%\%%i" (
 		ECHO [%logTime%] ERROR: Old folder link not exists：%oldDataPath%\%%i！ >>log\log_%logDate%.txt
@@ -473,19 +474,19 @@ GOTO :EOF
 ::Update data in cfg.ini
 IF %newServerName%==Landserver (
 	SET /A "landServerStatus=1"
-	SET "shotcutName=原神官服"
+	SET "shotcutName=Sky-Island server"
 	SET "channel=1"
 	SET "cps=mihoyo"
 ) ELSE (
 	IF %newServerName%==Treeserver (
 		SET /A "treeServerStatus=1"
-		SET "shotcutName=原神b服"
+		SET "shotcutName=World-Tree server"
 		SET "channel=14"
 		SET "cps=bilibili"
 	) ELSE (
 		IF %newServerName%==Seaserver (
 			SET /A "seaServerStatus=1"
-			SET "shotcutName=原神国际服"
+			SET "shotcutName=International server"
 			SET "channel=1"
 			SET "cps=mihoyo"
 		)
@@ -520,6 +521,6 @@ GOTO :EOF
 
 :FAILED_BREAK
 ::This is failed break
-ECHO;&ECHO 创建服务器失败，按任意一个键退出！
+ECHO;&ECHO Failed to create server, press any key to exit.
 ECHO This is failed break. >>log\log_%logDate%.txt
 PAUSE>NUL & EXIT
