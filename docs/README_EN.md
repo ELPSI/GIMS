@@ -24,6 +24,13 @@ If you create another **2 servers** with this tool, it will take up to about **1
 ## Install
 This is a **batch file** and does not require installation, and only resource packs need to be downloaded and unzipped.
 
+## Download
+The resource pack download link is as follows:
+
+[123 cloud](https://www.123pan.com/s/1ym7Vv-Ka6vd.html)(In China, extraction code:GIMS)
+[Mega](https://mega.nz/folder/9Z1mVJKC#J7IncDd9njeXiRAje8p3VA)
+
+
 ## Usage
 1. **Download** this tool and **unzip** it to be a folder named `GIMS` on your computer.
 
@@ -53,6 +60,8 @@ This is a **batch file** and does not require installation, and only resource pa
 2. If you can't connect to the server, maybe you need to use a network tool such as a game accelerator.
 
 3. The resource files used by this tool are all extracted from the **official resource files** of Genshin Impact. Except for `config.ini`, there is **no modification** of the original game resource files, which will not affect the use of the original server. If you don't want to use this tool later, you can delete the newly created `GenshinImpactNew` folder and `GIMS` folder.
+
+4. Since the resource pack has version timeliness, if the game version is updated, you need to wait for the author of this tool to update the resource pack or update and make the resource pack yourself.
 
 ## Author
 [@elpsi](https://github.com/ELPSI)
