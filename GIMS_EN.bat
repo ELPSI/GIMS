@@ -461,7 +461,7 @@ IF %treeServerStatus%==1 (
 		IF NOT EXIST "PCGameSDK.dll" (
 			ECHO;&ECHO "PCGameSDK.dll" was not detected, please download again.
 			GOTO CHECK_TREESDK
-		) 
+		)
 	)
 	COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll">NUL 2>NUL
 	IF ERRORLEVEL 1 (

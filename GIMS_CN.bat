@@ -461,7 +461,7 @@ IF "%newServerName%"=="Treeserver" (
 		IF NOT EXIST "PCGameSDK.dll" (
 			ECHO;&ECHO 未检测到"PCGameSDK.dll"，请重新下载！
 			GOTO COPY_TREESDK
-		) 
+		)
 	)
 	COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll">NUL 2>NUL
 	IF ERRORLEVEL 1 (
