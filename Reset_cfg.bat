@@ -6,6 +6,7 @@ SET /P "gameVersion=Please input gameVersion(For example:3.5.0),end with inputti
 IF NOT EXIST "cfg" (
 	MD "cfg"
 )
+
 >cfg\cfg.ini ECHO gameVersion=%gameVersion%
 >>cfg\cfg.ini ECHO landServerStatus=0
 >>cfg\cfg.ini ECHO treeServerStatus=0
