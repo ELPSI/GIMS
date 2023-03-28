@@ -452,16 +452,16 @@ FOR /F %%i IN (cfg\oldPluginsDirList.txt) DO (
 )
 GOTO :EOF
 
-:CHECK_TREESDK
+:COPY_TREESDK
 ::Copy PCGameSDK.dll for treeserver (for CN to sea)
-IF %treeServerStatus%==1 (
+IF "%newServerName%"=="Treeserver" (
 	IF NOT EXIST "PCGameSDK.dll" (
 		ECHO;&ECHO Please confirm that "PCGameSDK.dll" has been downloaded and press Enter to continue:
 		PAUSE >NUL
 		IF NOT EXIST "PCGameSDK.dll" (
 			ECHO;&ECHO "PCGameSDK.dll" was not detected, please download again.
-			GOTO CHECK_TREESDK
-		)
+			GOTO COPY_TREESDK
+		) 
 	)
 	COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll">NUL 2>NUL
 	IF ERRORLEVEL 1 (
