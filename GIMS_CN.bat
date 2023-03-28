@@ -141,9 +141,6 @@ IF %seaRegStatus%==1 (
 		SET "oldGamePath=%oldSeaRegGamePath%"
 		echo "oldGamePath=!oldGamePath!" >>log\log_%logDate%.txt
 		CALL :JUDGE_SERVER_TYPE
-		SET "oldGamePath=%oldCNRegGamePath%"
-		echo "oldGamePath=!oldGamePath!" >>log\log_%logDate%.txt
-		CALL :JUDGE_SERVER_TYPE
 	) ELSE (
 		SET "oldGamePath=%oldSeaRegGamePath%"
 		echo "oldGamePath=!oldGamePath!" >>log\log_%logDate%.txt
@@ -245,9 +242,8 @@ GOTO :EOF
 SET /A "newServerStatus=0"
 ECHO;&ECHO 原始游戏安装路径为"%oldGamePath%"
 ECHO [%logTime%] INFO: Old game path: "%oldGamePath%". >>log\log_%logDate%.txt
-CD /D "%oldGamePath%\..\.."
-SET "newPath=%CD%GenshinImpactNew"
-CD /D %~DP0
+FOR %%I in ("%oldGamePath%") DO SET "newGameDrive=%%~dI"
+SET "newPath=%newGameDrive%\GenshinImpactNew"
 IF NOT EXIST "%newPath%" MD "%newPath%"
 ECHO;&ECHO 新游戏路径默认为："%newPath%"
 ECHO [%logTime%] INFO: New Path: "%newPath%". >>log\log_%logDate%.txt
@@ -277,7 +273,7 @@ IF "%newServerNum%"=="1" (
 		)
 	)
 )
-echo newServerStatus=%newServerStatus% >>log\log_%logDate%.txt
+ECHO [%logTime%] INFO: newServerStatus=%newServerStatus% >>log\log_%logDate%.txt
 IF %newServerStatus%==1 (
 	ECHO;&ECHO 此服务器已存在，请选择其他服！
 	GOTO INPUT_SERVER	
@@ -291,11 +287,11 @@ IF %newServerStatus%==1 (
 	)
 )
 IF "%newServerName%"=="Seaserver" (
-	SET "resourceName=国际服资源"
+	SET "resourceName=SeaRes_"
 	SET "newDataType=GenshinImpact_Data"
 	SET "gameName=GenshinImpact.exe"
 ) ELSE (
-	SET "resourceName=国服资源"
+	SET "resourceName=CNRes_"
 	SET "newDataType=YuanShen_Data"
 	SET "gameName=YuanShen.exe"
 )
@@ -326,6 +322,7 @@ IF ERRORLEVEL 1 (
 ) ELSE (
 	ECHO [%logTime%] INFO: Copy resources successfully. >>log\log_%logDate%.txt
 )
+CALL :COPY_TREESDK
 ::Make link (for CN to sea)
 ECHO;&ECHO 开始创建链接...
 FOR /F "EOL=# DELIMS==" %%i IN (cfg\listdir.ini) DO (
@@ -362,19 +359,18 @@ FOR /F "eol=# delims==" %%i in (cfg\listfile.ini) do (
 		ECHO [%logTime%] WARNING: File link exists：%newDataPath%\%%i！ >>log\log_%logDate%.txt
 	)		
 )
-::Copy PCGameSDK.dll for treeserver (for CN to sea)
-COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll">NUL 2>NUL
-IF ERRORLEVEL 1 (
-	ECHO [%logTime%] ERROR:Fail to copy PCGameSDK.dll. >>log\log_%logDate%.txt
-	CALL :FAILED_BREAK		
-) ELSE (
-	ECHO [%logTime%] INFO: Copy PCGameSDK.dll successfully. >>log\log_%logDate%.txt
-)
 GOTO :EOF
 
 :LAND_TREE
+::check newServerName is treeserver or not (for land to tree)
+IF "%newServerName%"=="Treeserver" (
+	::Copy PCGameSDK.dll for treeserver (for land to tree)
+	IF NOT EXIST "%newDataPath%" MD "%newDataPath%"
+	IF NOT EXIST "%newDataPath%\Plugins" MD "%newDataPath%\Plugins"
+	CALL :COPY_TREESDK
+)
 ::Copy gamecnfilelist files (for land to tree)
-ECHO [%logTime%] INFO: Start to copy gamecnfilelist. >>log\log_%logDate%.txt
+ECHO [%logTime%] INFO: Start to copy files according to gamecnfilelist. >>log\log_%logDate%.txt
 	FOR /F "eol=#" %%i in (cfg\gamecnfilelist.ini) do (	
 		COPY /Y "%oldGamePath%\%%i" "%newGamePath%\%%i" >NUL 2>NUL
 		IF ERRORLEVEL 1 (
@@ -385,19 +381,6 @@ ECHO [%logTime%] INFO: Start to copy gamecnfilelist. >>log\log_%logDate%.txt
 		)	
 )
 ECHO [%logTime%] INFO: End copying gamecnfilelist. >>log\log_%logDate%.txt
-::check newServerName is landserver or not (for land to tree)
-IF "%newServerName%"=="Treeserver" (
-	::Copy PCGameSDK.dll for treeserver (for land to tree)
-	IF NOT EXIST "%newDataPath%" MD "%newDataPath%"
-	IF NOT EXIST "%newDataPath%\Plugins" MD "%newDataPath%\Plugins"
-	COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll" >NUL 2>NUL
-	IF ERRORLEVEL 1 (
-		ECHO [%logTime%] ERROR:Failed to copy PCGameSDK.dll. >>log\log_%logDate%.txt
-		CALL :FAILED_BREAK	
-	) ELSE (	
-		ECHO [%logTime%] INFO: Copy PCGameSDK.dll successfully. >>log\log_%logDate%.txt
-	)
-)
 ::Make directory list and make link (for land to tree)
 DIR "%oldDataPath%" /B /AD > cfg\oldDataDirList.txt
 DIR "%oldDataPath%" /B /A-D > cfg\oldDataFileList.txt
@@ -469,23 +452,44 @@ FOR /F %%i IN (cfg\oldPluginsDirList.txt) DO (
 )
 GOTO :EOF
 
+:COPY_TREESDK
+::Copy PCGameSDK.dll for treeserver (for CN to sea)
+IF "%newServerName%"=="Treeserver" (
+	IF NOT EXIST "PCGameSDK.dll" (
+		ECHO;&ECHO 请确认已下载"PCGameSDK.dll"，按Enter键继续：
+		PAUSE >NUL
+		IF NOT EXIST "PCGameSDK.dll" (
+			ECHO;&ECHO 未检测到"PCGameSDK.dll"，请重新下载！
+			GOTO COPY_TREESDK
+		) 
+	)
+	COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll">NUL 2>NUL
+	IF ERRORLEVEL 1 (
+		ECHO [%logTime%] ERROR:Fail to copy PCGameSDK.dll. >>log\log_%logDate%.txt
+		CALL :FAILED_BREAK		
+	) ELSE (
+		ECHO [%logTime%] INFO: Copy PCGameSDK.dll successfully. >>log\log_%logDate%.txt
+	)
+)
+GOTO :EOF
+
 :UPDATECFG
 ::Update data in cfg.ini
 IF %newServerName%==Landserver (
 	SET /A "landServerStatus=1"
-	SET "shotcutName=原神官服"
+	SET "shortcutName=原神官服"
 	SET "channel=1"
 	SET "cps=mihoyo"
 ) ELSE (
 	IF %newServerName%==Treeserver (
 		SET /A "treeServerStatus=1"
-		SET "shotcutName=原神b服"
+		SET "shortcutName=原神b服"
 		SET "channel=14"
 		SET "cps=bilibili"
 	) ELSE (
 		IF %newServerName%==Seaserver (
 			SET /A "seaServerStatus=1"
-			SET "shotcutName=原神国际服"
+			SET "shortcutName=原神国际服"
 			SET "channel=1"
 			SET "cps=mihoyo"
 		)
@@ -514,7 +518,7 @@ GOTO :EOF
 
 :CREATE_SHORTCUT
 ::Create desktop shortcut
-mshta VBScript:Execute("Set a=CreateObject(""WScript.Shell""):Set b=a.CreateShortcut(a.SpecialFolders(""Desktop"") & ""\%shotcutName%.lnk""):b.TargetPath=""%newGamePath%\%gameName%"":b.WorkingDirectory=""%newGamePath%"":b.Save:close")
+mshta VBScript:Execute("Set a=CreateObject(""WScript.Shell""):Set b=a.CreateShortcut(a.SpecialFolders(""Desktop"") & ""\%shortcutName%.lnk""):b.TargetPath=""%newGamePath%\%gameName%"":b.WorkingDirectory=""%newGamePath%"":b.Save:close")
 ECHO Genshin Impact server create successfully. >>log\log_%logDate%.txt
 GOTO :EOF
 
@@ -522,4 +526,4 @@ GOTO :EOF
 ::This is failed break
 ECHO;&ECHO 创建服务器失败，按任意一个键退出！
 ECHO This is failed break. >>log\log_%logDate%.txt
-PAUSE>NUL & EXIT
+PAUSE>NUL && EXIT

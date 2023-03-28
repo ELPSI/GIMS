@@ -141,9 +141,6 @@ IF %seaRegStatus%==1 (
 		SET "oldGamePath=%oldSeaRegGamePath%"
 		echo "oldGamePath=!oldGamePath!" >>log\log_%logDate%.txt
 		CALL :JUDGE_SERVER_TYPE
-		SET "oldGamePath=%oldCNRegGamePath%"
-		echo "oldGamePath=!oldGamePath!" >>log\log_%logDate%.txt
-		CALL :JUDGE_SERVER_TYPE
 	) ELSE (
 		SET "oldGamePath=%oldSeaRegGamePath%"
 		echo "oldGamePath=!oldGamePath!" >>log\log_%logDate%.txt
@@ -245,9 +242,8 @@ GOTO :EOF
 SET /A "newServerStatus=0"
 ECHO;&ECHO The original game installation path is: "%oldGamePath%"
 ECHO [%logTime%] INFO: Old game path: "%oldGamePath%". >>log\log_%logDate%.txt
-CD /D "%oldGamePath%\..\.."
-SET "newPath=%CD%GenshinImpactNew"
-CD /D %~DP0
+FOR %%I in ("%oldGamePath%") DO SET "newGameDrive=%%~dI"
+SET "newPath=%newGameDrive%\GenshinImpactNew"
 IF NOT EXIST "%newPath%" MD "%newPath%"
 ECHO;&ECHO The new game path default is: "%newPath%"
 ECHO [%logTime%] INFO: New Path: "%newPath%". >>log\log_%logDate%.txt
@@ -277,7 +273,7 @@ IF "%newServerNum%"=="1" (
 		)
 	)
 )
-echo newServerStatus=%newServerStatus% >>log\log_%logDate%.txt
+ECHO [%logTime%] INFO: newServerStatus=%newServerStatus% >>log\log_%logDate%.txt
 IF %newServerStatus%==1 (
 	ECHO;&ECHO This server already exists, please choose another server.
 	GOTO INPUT_SERVER	
@@ -316,8 +312,7 @@ IF NOT EXIST "%~DP0%resourceName%V%gameVersion%" (
 		GOTO CN_SEA
 	) 
 	ECHO;&ECHO Please unzip "%resourceName%V%gameVersion%.exe" to this folder, that is, just press OK in the pop-up dialog box.
-	"%resourceName%V%gameVersion%.exe"
-	
+	"%resourceName%V%gameVersion%.exe"	
 )
 XCOPY /E /Y "%resourceName%V%gameVersion%\" "%newGamePath%" >NUL 2>NUL
 ECHO;&ECHO Copying resource files to new game path...
@@ -327,6 +322,7 @@ IF ERRORLEVEL 1 (
 ) ELSE (
 	ECHO [%logTime%] INFO: Copy resources successfully. >>log\log_%logDate%.txt
 )
+CALL :COPY_TREESDK
 ::Make link (for CN to sea)
 ECHO;&ECHO Start creating links...
 FOR /F "EOL=# DELIMS==" %%i IN (cfg\listdir.ini) DO (
@@ -363,19 +359,18 @@ FOR /F "eol=# delims==" %%i in (cfg\listfile.ini) do (
 		ECHO [%logTime%] WARNING: File link exists：%newDataPath%\%%i！ >>log\log_%logDate%.txt
 	)		
 )
-::Copy PCGameSDK.dll for treeserver (for CN to sea)
-COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll">NUL 2>NUL
-IF ERRORLEVEL 1 (
-	ECHO [%logTime%] ERROR:Fail to copy PCGameSDK.dll. >>log\log_%logDate%.txt
-	CALL :FAILED_BREAK		
-) ELSE (
-	ECHO [%logTime%] INFO: Copy PCGameSDK.dll successfully. >>log\log_%logDate%.txt
-)
 GOTO :EOF
 
 :LAND_TREE
+::check newServerName is treeserver or not (for land to tree)
+IF "%newServerName%"=="Treeserver" (
+	::Copy PCGameSDK.dll for treeserver (for land to tree)
+	IF NOT EXIST "%newDataPath%" MD "%newDataPath%"
+	IF NOT EXIST "%newDataPath%\Plugins" MD "%newDataPath%\Plugins"
+	CALL :COPY_TREESDK
+)
 ::Copy gamecnfilelist files (for land to tree)
-ECHO [%logTime%] INFO: Start to copy gamecnfilelist. >>log\log_%logDate%.txt
+ECHO [%logTime%] INFO: Start to copy files according to gamecnfilelist. >>log\log_%logDate%.txt
 	FOR /F "eol=#" %%i in (cfg\gamecnfilelist.ini) do (	
 		COPY /Y "%oldGamePath%\%%i" "%newGamePath%\%%i" >NUL 2>NUL
 		IF ERRORLEVEL 1 (
@@ -386,19 +381,6 @@ ECHO [%logTime%] INFO: Start to copy gamecnfilelist. >>log\log_%logDate%.txt
 		)	
 )
 ECHO [%logTime%] INFO: End copying gamecnfilelist. >>log\log_%logDate%.txt
-::check newServerName is landserver or not (for land to tree)
-IF "%newServerName%"=="Treeserver" (
-	::Copy PCGameSDK.dll for treeserver (for land to tree)
-	IF NOT EXIST "%newDataPath%" MD "%newDataPath%"
-	IF NOT EXIST "%newDataPath%\Plugins" MD "%newDataPath%\Plugins"
-	COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll" >NUL 2>NUL
-	IF ERRORLEVEL 1 (
-		ECHO [%logTime%] ERROR:Failed to copy PCGameSDK.dll. >>log\log_%logDate%.txt
-		CALL :FAILED_BREAK	
-	) ELSE (	
-		ECHO [%logTime%] INFO: Copy PCGameSDK.dll successfully. >>log\log_%logDate%.txt
-	)
-)
 ::Make directory list and make link (for land to tree)
 DIR "%oldDataPath%" /B /AD > cfg\oldDataDirList.txt
 DIR "%oldDataPath%" /B /A-D > cfg\oldDataFileList.txt
@@ -470,23 +452,44 @@ FOR /F %%i IN (cfg\oldPluginsDirList.txt) DO (
 )
 GOTO :EOF
 
+:CHECK_TREESDK
+::Copy PCGameSDK.dll for treeserver (for CN to sea)
+IF %treeServerStatus%==1 (
+	IF NOT EXIST "PCGameSDK.dll" (
+		ECHO;&ECHO Please confirm that "PCGameSDK.dll" has been downloaded and press Enter to continue:
+		PAUSE >NUL
+		IF NOT EXIST "PCGameSDK.dll" (
+			ECHO;&ECHO "PCGameSDK.dll" was not detected, please download again.
+			GOTO CHECK_TREESDK
+		) 
+	)
+	COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll">NUL 2>NUL
+	IF ERRORLEVEL 1 (
+		ECHO [%logTime%] ERROR:Fail to copy PCGameSDK.dll. >>log\log_%logDate%.txt
+		CALL :FAILED_BREAK		
+	) ELSE (
+		ECHO [%logTime%] INFO: Copy PCGameSDK.dll successfully. >>log\log_%logDate%.txt
+	)
+)
+GOTO :EOF
+
 :UPDATECFG
 ::Update data in cfg.ini
 IF %newServerName%==Landserver (
 	SET /A "landServerStatus=1"
-	SET "shotcutName=Sky-Island server"
+	SET "shortcutName=Sky-Island server"
 	SET "channel=1"
 	SET "cps=mihoyo"
 ) ELSE (
 	IF %newServerName%==Treeserver (
 		SET /A "treeServerStatus=1"
-		SET "shotcutName=World-Tree server"
+		SET "shortcutName=World-Tree server"
 		SET "channel=14"
 		SET "cps=bilibili"
 	) ELSE (
 		IF %newServerName%==Seaserver (
 			SET /A "seaServerStatus=1"
-			SET "shotcutName=International server"
+			SET "shortcutName=International server"
 			SET "channel=1"
 			SET "cps=mihoyo"
 		)
@@ -515,7 +518,7 @@ GOTO :EOF
 
 :CREATE_SHORTCUT
 ::Create desktop shortcut
-mshta VBScript:Execute("Set a=CreateObject(""WScript.Shell""):Set b=a.CreateShortcut(a.SpecialFolders(""Desktop"") & ""\%shotcutName%.lnk""):b.TargetPath=""%newGamePath%\%gameName%"":b.WorkingDirectory=""%newGamePath%"":b.Save:close")
+mshta VBScript:Execute("Set a=CreateObject(""WScript.Shell""):Set b=a.CreateShortcut(a.SpecialFolders(""Desktop"") & ""\%shortcutName%.lnk""):b.TargetPath=""%newGamePath%\%gameName%"":b.WorkingDirectory=""%newGamePath%"":b.Save:close")
 ECHO Genshin Impact server create successfully. >>log\log_%logDate%.txt
 GOTO :EOF
 
@@ -523,4 +526,4 @@ GOTO :EOF
 ::This is failed break
 ECHO;&ECHO Failed to create server, press any key to exit.
 ECHO This is failed break. >>log\log_%logDate%.txt
-PAUSE>NUL & EXIT
+PAUSE>NUL && EXIT
