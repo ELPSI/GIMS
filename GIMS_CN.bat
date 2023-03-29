@@ -138,7 +138,7 @@ IF %userErrorLevel%==0 (
 )
 IF %seaRegStatus%==1 (
 	IF %CNRegStatus%==1 (		
-		SET "oldGamePath=%oldSeaRegGamePath%"
+		SET "oldGamePath=%oldCNRegGamePath%"
 		echo "oldGamePath=!oldGamePath!" >>log\log_%logDate%.txt
 		CALL :JUDGE_SERVER_TYPE
 	) ELSE (
@@ -243,6 +243,16 @@ SET /A "newServerStatus=0"
 ECHO;&ECHO 原始游戏安装路径为"%oldGamePath%"
 ECHO [%logTime%] INFO: Old game path: "%oldGamePath%". >>log\log_%logDate%.txt
 FOR %%I in ("%oldGamePath%") DO SET "newGameDrive=%%~dI"
+CHKNTFS %newGameDrive% >NUL 2>NUL
+IF ERRORLEVEL 1 (
+	ECHO;&ECHO %newGameDrive% 不是NTFS格式，本工具暂不支持，请将此分区转换成NTFS格式或者使用其他工具。
+    ECHO [%logTime%] ERROR: %newGameDrive% is not NTFS. >>log\log_%logDate%.txt
+	CALL :FAILED_BREAK
+) ELSE (
+	ECHO;&ECHO %newGameDrive% 是NTFS格式。
+    ECHO [%logTime%] INFO: %newGameDrive% is NTFS. >>log\log_%logDate%.txt
+)
+
 SET "newPath=%newGameDrive%\GenshinImpactNew"
 IF NOT EXIST "%newPath%" MD "%newPath%"
 ECHO;&ECHO 新游戏路径默认为："%newPath%"
@@ -461,7 +471,7 @@ IF "%newServerName%"=="Treeserver" (
 		IF NOT EXIST "PCGameSDK.dll" (
 			ECHO;&ECHO 未检测到"PCGameSDK.dll"，请重新下载！
 			GOTO COPY_TREESDK
-		)
+		) 
 	)
 	COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll">NUL 2>NUL
 	IF ERRORLEVEL 1 (

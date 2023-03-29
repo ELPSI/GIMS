@@ -138,7 +138,7 @@ IF %userErrorLevel%==0 (
 )
 IF %seaRegStatus%==1 (
 	IF %CNRegStatus%==1 (		
-		SET "oldGamePath=%oldSeaRegGamePath%"
+		SET "oldGamePath=%oldCNRegGamePath%"
 		echo "oldGamePath=!oldGamePath!" >>log\log_%logDate%.txt
 		CALL :JUDGE_SERVER_TYPE
 	) ELSE (
@@ -243,6 +243,16 @@ SET /A "newServerStatus=0"
 ECHO;&ECHO The original game installation path is: "%oldGamePath%"
 ECHO [%logTime%] INFO: Old game path: "%oldGamePath%". >>log\log_%logDate%.txt
 FOR %%I in ("%oldGamePath%") DO SET "newGameDrive=%%~dI"
+CHKNTFS %newGameDrive% >NUL 2>NUL
+IF ERRORLEVEL 1 (
+	ECHO;&ECHO %newGameDrive% is not NTFS. This tool is not currently supported. Please convert this partition to NTFS format or use another tool.
+    ECHO [%logTime%] ERROR: %newGameDrive% is not NTFS. >>log\log_%logDate%.txt
+	CALL :FAILED_BREAK
+) ELSE (
+	ECHO;&ECHO %newGameDrive% is NTFS.
+    ECHO [%logTime%] INFO: %newGameDrive% is NTFS. >>log\log_%logDate%.txt
+)
+
 SET "newPath=%newGameDrive%\GenshinImpactNew"
 IF NOT EXIST "%newPath%" MD "%newPath%"
 ECHO;&ECHO The new game path default is: "%newPath%"
