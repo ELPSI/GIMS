@@ -47,6 +47,8 @@ The resource pack download link is as follows:
 
 7. Now you can see a newly created **shortcut** of Genshin Impact game on your **computer desktop**, **double click** it and enjoy yourself!
 
+8. For other instructions, please go to the bilibili website: https://www.bilibili.com/read/cv22707963.
+
 > **Situation 1:** If the **initial server** is **Sky-Island server**, the **new server** is **World-Tree server**, you need to download `PCGameSDK.dll` to `GIMS` folder. 
 >
 > **Situation 2:** If the **initial server** is **World-Tree server**, the **new server** is **Sky-Island server**, you don't need to download any other files.
@@ -63,6 +65,8 @@ The resource pack download link is as follows:
 3. The resource files used by this tool are all extracted from the **official resource files** of Genshin Impact. Except for `config.ini`, there is **no modification** of the original game resource files, which will not affect the use of the original server. If you don't want to use this tool later, you can delete the newly created `GenshinImpactNew` folder and `GIMS` folder.
 
 4. Since the resource pack has version timeliness, if the game version is updated, you need to wait for the author of this tool to update the resource pack or update and make the resource pack yourself.
+
+5. Since creating symbolic links is only supported in **NTFS** format, if your game is not installed on an **NTFS** formatted disk, this tool will not work properly. Please format the disk yourself or use another tool.
 
 ## Author
 [@elpsi](https://github.com/ELPSI)
