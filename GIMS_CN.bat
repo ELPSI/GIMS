@@ -162,19 +162,14 @@ GOTO :EOF
 ECHO;&ECHO _______________________________________________________________
 ECHO;&ECHO 请输入游戏安装路径：点击鼠标右键粘贴在此处，按Enter键即可:
 ECHO;&SET /P "oldGamePath=游戏安装路径为："
-IF EXIST "%oldGamePath%" (
-	ECHO %oldGamePath%|FINDSTR /C:"Genshin Impact\Genshin Impact game" > NUL
-	IF ERRORLEVEL 1	(
-		ECHO;&ECHO 输入的游戏安装路径不存在，请检查并重新输入.
-		GOTO INPUT_OLDGAMEPATH				
-	) ELSE (
-		ECHO;&ECHO 输入的游戏安装路径存在，请继续..
-		ECHO [%logTime%] INFO: OldGamePath exists：%oldGamePath% . >>log\log_%logDate%.txt
-	)	
+IF EXIST "%oldGamePath%\mhypbase.dll" (	
+	ECHO;&ECHO 输入的游戏安装路径存在，请继续..
+	ECHO [%logTime%] INFO: OldGamePath exists：%oldGamePath% . >>log\log_%logDate%.txt
 ) ELSE (
 	ECHO;&ECHO 输入的游戏安装路径不存在，请检查并重新输入.
 	GOTO INPUT_OLDGAMEPATH
 )
+CALL :JUDGE_SERVER_TYPE
 GOTO :EOF
 
 ::This is a subroutine.
