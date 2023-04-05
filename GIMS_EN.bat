@@ -2,26 +2,32 @@
 CHCP 65001 > NUL
 :: File name:	GIMS
 :: Author:		elpsy
-:: Version:		1.0.4
-:: Date:		20230402
-:: Description	Create a file/folder mapping in a specified location using the original resource files of Genshin Impact game, applicable to sky-island server, world-tree server and international server.
+:: Version:		1.0.5
+:: Date:		20230405
+:: Description	Create a file/folder mapping in a specified location using the original resource files of Genshin Impact game, applicable to Landserver, Treeserver and Seaserver.
 
 CD /D %~DP0 & TITLE GIMS
 SETLOCAL ENABLEDELAYEDEXPANSION
 SET "logDate=%DATE:~3,4%%DATE:~8,2%%DATE:~11,2%"
 SET "logTime=%TIME:~0,8%"
 SET /A "successCount=0"
+
 SET "oldGamePath=0"
 SET "oldDataPath=0"
 SET "oldDataType=0"
 SET "oldServerName=0"
+SET "oldGameName=0"
+
 SET "newGamePath=0"
 SET "newDataPath=0"
 SET "newDataType=0"
 SET "newServerName=0"
-SET "resourceName=0"
-SET "gameName=0"
+SET "newGameName=0"
+SET "newPath=0"
+
 SET "gameVersion=0"
+SET "resourceName=0"
+SET "channel=0"
 
 :GET_PRIVILEGES
 ::Get system administrator privileges
@@ -83,17 +89,19 @@ IF EXIST "cfg\cfg.ini" (
 	CALL :FAILED_BREAK
 )
 ECHO;&ECHO Reading configuration file...
-ECHO [%logTime%] INFO: Cfg.ini start to read: >>log\log_%logDate%.log
->>log\log_%logDate%.log ECHO gameVersion=%gameVersion%
->>log\log_%logDate%.log ECHO landServerStatus=%landServerStatus%
->>log\log_%logDate%.log ECHO treeServerStatus=%treeServerStatus%
->>log\log_%logDate%.log ECHO seaServerStatus=%seaServerStatus%
->>log\log_%logDate%.log ECHO oldGamePath=%oldGamePath%
->>log\log_%logDate%.log ECHO oldServerName=%oldServerName%
->>log\log_%logDate%.log ECHO oldDataType=%oldDataType%
->>log\log_%logDate%.log ECHO newPath=%newPath%
->>log\log_%logDate%.log ECHO successCount=%successCount%
-ECHO [%logTime%] INFO: Cfg.ini end reading.>>log\log_%logDate%.log
+(
+	ECHO [%logTime%] INFO: Cfg.ini start to read:
+	ECHO gameVersion=%gameVersion%
+	ECHO landServerStatus=%landServerStatus%
+	ECHO treeServerStatus=%treeServerStatus%
+	ECHO seaServerStatus=%seaServerStatus%
+	ECHO oldGamePath=%oldGamePath%
+	ECHO oldServerName=%oldServerName%
+	ECHO oldDataType=%oldDataType%
+	ECHO newPath=%newPath%
+	ECHO successCount=%successCount%
+	ECHO [%logTime%] INFO: Cfg.ini end reading.
+)>>log\log_%logDate%.log
 GOTO :EOF
 
 :GET_OLDPATH_REG
@@ -106,7 +114,7 @@ FOR /F "SKIP=2 TOKENS=1,2 DELIMS=:" %%i IN ('REG QUERY "HKLM\SOFTWARE\Microsoft\
 	SET "oldCNRegGamePath=!oldCNRegPath!\Genshin Impact game"
 )
 IF %userErrorLevel%==0 (
-	IF EXIST "%oldCNRegGamePath%" (
+	IF EXIST "%oldCNRegGamePath%\mhypbase.dll" (
 		SET "CNRegStatus=1"
 		ECHO [%logTime%] DEBUG: CNRegStatus=!CNRegStatus! >>log\log_%logDate%.log
 		ECHO [%logTime%] INFO: CNserver client installation path in regedit exists:"%oldCNRegGamePath%". >>log\log_%logDate%.log
@@ -129,7 +137,7 @@ FOR /F "SKIP=2 TOKENS=1,2 DELIMS=:" %%i IN ('REG QUERY "HKLM\SOFTWARE\Microsoft\
 	SET "oldSeaRegGamePath=!oldSeaRegPath!\Genshin Impact game"
 )
 IF %userErrorLevel%==0 (
-	IF EXIST "%oldSeaRegGamePath%" (
+	IF EXIST "%oldSeaRegGamePath%\mhypbase.dll" (
 		SET "seaRegStatus=1"
 		ECHO [%logTime%] DEBUG: seaRegStatus=!seaRegStatus! >>log\log_%logDate%.log
 		ECHO [%logTime%] INFO: Seaserver client installation path in regedit exists:"%oldSeaRegGamePath%". >>log\log_%logDate%.log
@@ -188,44 +196,43 @@ FOR /F "TOKENS=1,2 DELIMS==" %%i IN (config.ini) DO (
 	)
 )
 CD /D %~DP0
-ECHO [%logTime%] INFO: Config.ini start to read: >>log\log_%logDate%.log
-ECHO channel=%channel% >>log\log_%logDate%.log
-ECHO cps=%cps% >>log\log_%logDate%.log
-ECHO game_version=%game_version% >>log\log_%logDate%.log
-ECHO sub_channel=%sub_channel% >>log\log_%logDate%.log
-ECHO [%logTime%] INFO: Config.ini end reading. >>log\log_%logDate%.log
+(
+	ECHO [%logTime%] INFO: Config.ini start to read:
+	ECHO channel=%channel%
+	ECHO cps=%cps%
+	ECHO game_version=%game_version%
+	ECHO sub_channel=%sub_channel%
+	ECHO [%logTime%] INFO: Config.ini end reading.
+)>>log\log_%logDate%.log
 
-SET "gameVersion=%game_version%"
+IF NOT "%game_version%"=="%gameVersion%" (
+	ECHO The game version has expired, please update the game.
+	CALL :FAILED_BREAK
+)
 GOTO :EOF
 
 :JUDGE_SERVER_TYPE
 CALL :READ_CONFIG_INI
-IF EXIST "%oldGamePath%\GenshinImpact_Data" (
-	IF NOT EXIST "%oldGamePath%\YuanShen_Data" (
-		SET "oldServerName=Seaserver"
-		SET "oldDataType=GenshinImpact_Data"
-		SET /A "seaServerStatus=1"
-		ECHO;&ECHO Detected that the original server is International server.
-		ECHO [%logTime%] INFO: Seaserver detected. >>log\log_%logDate%.log
-	) ELSE (
-		ECHO;&ECHO The "Data" folder is duplicated, please download and install the game again.
-		ECHO [%logTime%] ERROR: Both Yuanshen_Data and GenshinImpact_Data exist. >>log\log_%logDate%.log
-		CALL :FAILED_BREAK
-	)
+IF EXIST "%oldGamePath%\GenshinImpact.exe" (
+	SET "oldServerName=Seaserver"
+	SET "oldDataType=GenshinImpact_Data"
+	SET /A "seaServerStatus=1"
+	ECHO;&ECHO Detected that the original server is Seaserver.
+	ECHO [%logTime%] INFO: Seaserver detected. >>log\log_%logDate%.log
 ) ELSE (
-	IF EXIST "%oldGamePath%\YuanShen_Data" (
+	IF EXIST "%oldGamePath%\YuanShen.exe" (
 		IF %channel%==1 (
 			SET "oldServerName=Landserver"
 			SET "oldDataType=YuanShen_Data"
 			SET /A "landServerStatus=1"
-			ECHO;&ECHO Detected that the original Yuanshen server is Sky-Island server.
+			ECHO;&ECHO Detected that the original Yuanshen server is Landserver.
 			ECHO [%logTime%] INFO: Landserver detected. >>log\log_%logDate%.log
 		) ELSE (
 			IF %channel%==14 (
 				SET "oldServerName=Treeserver"
 				SET "oldDataType=YuanShen_Data"
 				SET /A "treeServerStatus=1"
-				ECHO;&ECHO Detected that the original Yuanshen server is World-Tree server.
+				ECHO;&ECHO Detected that the original Yuanshen server is Treeserver.
 				ECHO [%logTime%] INFO: Treeserver detected. >>log\log_%logDate%.log
 			) ELSE (
 				ECHO;&ECHO The content of Config.ini is wrong.
@@ -233,10 +240,6 @@ IF EXIST "%oldGamePath%\GenshinImpact_Data" (
 				CALL :FAILED_BREAK
 			)
 		)
-	) ELSE (
-		ECHO;&ECHO The Data folder cannot be found, please download and install the game again.
-		ECHO [%logTime%] ERROR: Game data directory error. >>log\log_%logDate%.log
-		CALL :FAILED_BREAK
 	)
 )
 GOTO :EOF
@@ -248,9 +251,10 @@ ECHO;&ECHO The original game installation path is: "%oldGamePath%"
 FOR %%I in ("%oldGamePath%") DO SET "newGameDrive=%%~dI"
 CHKNTFS %newGameDrive% >NUL 2>NUL
 IF ERRORLEVEL 1 (
-	ECHO;&ECHO %newGameDrive% is not NTFS. This tool is not currently supported. Please convert this partition to NTFS format or use another tool.
+	ECHO;&ECHO %newGameDrive% is not NTFS. GIMS tool can not support. Please use GISS tool. Press "Enter" key to continue.
 	ECHO [%logTime%] ERROR: %newGameDrive% is not NTFS. >>log\log_%logDate%.log
-	CALL :FAILED_BREAK
+	PAUSE & CALL GICS.bat
+	EXIT
 ) ELSE (
 	ECHO;&ECHO %newGameDrive% is NTFS.
 	ECHO [%logTime%] INFO: %newGameDrive% is NTFS. >>log\log_%logDate%.log
@@ -265,9 +269,9 @@ ECHO;&ECHO The new game path default is: "%newPath%"
 ECHO [%logTime%] DEBUG: newPath=%newPath%. >>log\log_%logDate%.log
 REM ECHO;&ECHO _______________________________________________________________
 ECHO;&ECHO Please select the type of game server you want to create:
-ECHO;&ECHO 1.Sky-Island server (ID starts with the number 1 or 2).
-ECHO;&ECHO 2.World-Tree server (ID starts with the number 5).
-ECHO;&ECHO 3.International server (ID starts with the number 6, 7, 8 or 9).
+ECHO;&ECHO 1.Landserver (ID starts with the number 1 or 2).
+ECHO;&ECHO 2.Treeserver (ID starts with the number 5).
+ECHO;&ECHO 3.Seaserver (ID starts with the number 6, 7, 8 or 9).
 
 :INPUT_SERVER
 ECHO;&ECHO _______________________________________________________________
@@ -305,11 +309,11 @@ IF %newServerStatus%==1 (
 IF "%newServerName%"=="Seaserver" (
 	SET "resourceName=SeaRes_"
 	SET "newDataType=GenshinImpact_Data"
-	SET "gameName=GenshinImpact.exe"
+	SET "newGameName=GenshinImpact.exe"
 ) ELSE (
 	SET "resourceName=CNRes_"
 	SET "newDataType=YuanShen_Data"
-	SET "gameName=YuanShen.exe"
+	SET "newGameName=YuanShen.exe"
 )
 SET "oldDataPath=%oldGamePath%\%oldDataType%"
 SET "newGamePath=%newPath%\%newServerName%"
@@ -493,19 +497,19 @@ GOTO :EOF
 ::Update data in cfg.ini
 IF %newServerName%==Landserver (
 	SET /A "landServerStatus=1"
-	SET "shortcutName=Sky-Island server"
+	SET "shortcutName=Landserver"
 	SET "channel=1"
 	SET "cps=mihoyo"
 ) ELSE (
 	IF %newServerName%==Treeserver (
 		SET /A "treeServerStatus=1"
-		SET "shortcutName=World-Tree server"
+		SET "shortcutName=Treeserver"
 		SET "channel=14"
 		SET "cps=bilibili"
 	) ELSE (
 		IF %newServerName%==Seaserver (
 			SET /A "seaServerStatus=1"
-			SET "shortcutName=International server"
+			SET "shortcutName=Seaserver"
 			SET "channel=1"
 			SET "cps=mihoyo"
 		)
@@ -513,28 +517,32 @@ IF %newServerName%==Landserver (
 )
 CD /D %~DP0
 ECHO [%logTime%] INFO: Config.ini start to update:>>log\log_%logDate%.log
->"%newGamePath%\config.ini" ECHO channel=%channel%
->>"%newGamePath%\config.ini" ECHO cps=%cps%
->>"%newGamePath%\config.ini" ECHO game_version=%gameVersion%
->>"%newGamePath%\config.ini" ECHO sub_channel=%sub_channel%
+(
+	ECHO channel=%channel%
+	ECHO cps=%cps%
+	ECHO game_version=%gameVersion%
+	ECHO sub_channel=%sub_channel%
+)>"%newGamePath%\config.ini"
 ECHO [%logTime%] INFO: Config.ini end updating.>>log\log_%logDate%.log
 SET /A "successCount+=1"
 ECHO [%logTime%] INFO: Cfg.ini start to update: >>log\log_%logDate%.log
->cfg\cfg.ini ECHO gameVersion=%gameVersion%
->>cfg\cfg.ini ECHO landServerStatus=%landServerStatus%
->>cfg\cfg.ini ECHO treeServerStatus=%treeServerStatus%
->>cfg\cfg.ini ECHO seaServerStatus=%seaServerStatus%
->>cfg\cfg.ini ECHO oldGamePath=%oldGamePath%
->>cfg\cfg.ini ECHO oldServerName=%oldServerName%
->>cfg\cfg.ini ECHO oldDataType=%oldDataType%
->>cfg\cfg.ini ECHO newPath=%newPath%
->>cfg\cfg.ini ECHO successCount=%successCount%
+(
+	ECHO gameVersion=%gameVersion%
+	ECHO landServerStatus=%landServerStatus%
+	ECHO treeServerStatus=%treeServerStatus%
+	ECHO seaServerStatus=%seaServerStatus%
+	ECHO oldGamePath=%oldGamePath%
+	ECHO oldServerName=%oldServerName%
+	ECHO oldDataType=%oldDataType%
+	ECHO newPath=%newPath%
+	ECHO successCount=%successCount%
+)>cfg\cfg.ini
 ECHO [%logTime%] INFO: Cfg.ini end updating.>>log\log_%logDate%.log
 GOTO :EOF
 
 :CREATE_SHORTCUT
 ::Create desktop shortcut
-mshta VBScript:Execute("Set a=CreateObject(""WScript.Shell""):Set b=a.CreateShortcut(a.SpecialFolders(""Desktop"") & ""\%shortcutName%.lnk""):b.TargetPath=""%newGamePath%\%gameName%"":b.WorkingDirectory=""%newGamePath%"":b.Save:close")
+mshta VBScript:Execute("Set a=CreateObject(""WScript.Shell""):Set b=a.CreateShortcut(a.SpecialFolders(""Desktop"") & ""\%shortcutName%.lnk""):b.TargetPath=""%newGamePath%\%newGameName%"":b.WorkingDirectory=""%newGamePath%"":b.Save:close")
 ECHO [%logTime%] INFO: Genshin Impact server create successfully. >>log\log_%logDate%.log
 GOTO :EOF
 
